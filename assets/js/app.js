@@ -1,6 +1,6 @@
 // CONFIGURAÇÕES GOOGLE API
-const CLIENT_ID = 'YOUR_CLIENT_ID';
-const API_KEY = 'YOUR_API_KEY';
+const CLIENT_ID = '716832953958-rj4vgkdk7ftn03lbrs4h2or9v2di16e6.apps.googleusercontent.com';
+const API_KEY = 'AIzaSyDc7g27_P5QnUwBdsnsMTlmXG2Yr3IGfAM';
 const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
