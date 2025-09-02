@@ -2,8 +2,8 @@
 .scrollable-container {
 overflow-y: auto;
 scrollbar-width: thin; / Firefox /
-scrollbar-color: #3f424b #0d1117; / cor do polegar da barra de rolagem e cor da faixa */
-}
+scrollbar-color: #3f424b #0d1117; / cor do polegar da barra de rolagem e cor da faixa
+} */
 .scrollable-container::-webkit-scrollbar {
 width: 8px;
 }
@@ -60,3 +60,4 @@ border-color: #30363d;
 #preview-container .prose a {
 color: #22a0eb;
 }
+
