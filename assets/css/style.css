@@ -1,0 +1,29 @@
+body {
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  overflow: hidden;
+}
+
+.scrollable-container {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #f3f4f6;
+}
+
+.scrollable-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollable-container::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+
+.scrollable-container::-webkit-scrollbar-thumb {
+  background-color: #d1d5db;
+  border-radius: 4px;
+  border: 2px solid #f3f4f6;
+}
+
+#editor {
+  font-family: monospace;
+}

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor de Markdown</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Marcador de Markdown -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+  <!-- Google API Client Library -->
+  <script src="https://apis.google.com/js/api.js"></script>
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client"></script>
+  <!-- Estilos -->
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+
+  <!-- Navbar -->
+  <header class="bg-white shadow-md p-4 flex justify-between items-center z-10">
+    <h1 class="text-2xl font-bold text-gray-800">Markdown Editor</h1>
+    <div id="auth-buttons" class="flex items-center space-x-2">
+      <span id="user-info" class="text-gray-600 hidden"></span>
+      <button id="authorize_button" class="bg-indigo-500 text-white px-4 py-2 rounded-lg font-semibold shadow-md hover:bg-indigo-600">
+        Entrar com Google
+      </button>
+      <button id="signout_button" class="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold shadow-md hover:bg-red-600 hidden">
+        Sair
+      </button>
+    </div>
+  </header>
+
+  <!-- Main App Container -->
+  <div class="flex-1 flex overflow-hidden">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="bg-gray-50 w-64 p-4 flex flex-col border-r border-gray-200 scrollable-container">
+      <h2 class="text-xl font-semibold mb-4 text-gray-700">Meus Arquivos</h2>
+      <div id="file-list" class="flex-1 space-y-2">
+        <div id="loading" class="text-gray-500 text-sm italic">
+          Carregando arquivos...
+        </div>
+      </div>
+      <div class="mt-4 flex space-x-2">
+        <button id="new-file-button" class="bg-green-500 text-white px-4 py-2 rounded-lg font-semibold shadow-md w-1/2">
+          Novo Arquivo
+        </button>
+        <button id="save-file-button" class="bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold shadow-md w-1/2 hidden">
+          Salvar
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Panel -->
+    <main class="flex-1 p-4 flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4">
+      <!-- Editor -->
+      <div id="editor-container" class="bg-white rounded-lg shadow-md flex-1 overflow-hidden flex flex-col hidden">
+        <textarea id="editor" class="flex-1 w-full p-4 text-sm resize-none focus:outline-none scrollable-container border-b border-gray-200" placeholder="Comece a escrever em Markdown aqui..."></textarea>
+        <div class="bg-white p-2 border-t border-gray-200 flex items-center justify-between">
+          <span class="text-sm text-gray-500">Editor</span>
+        </div>
+      </div>
+      
+      <!-- Preview -->
+      <div id="preview-container" class="bg-white rounded-lg shadow-md flex-1 overflow-hidden flex flex-col hidden">
+        <div id="preview" class="p-4 flex-1 scrollable-container prose prose-sm max-w-none">
+        </div>
+        <div class="bg-white p-2 border-t border-gray-200 flex items-center justify-between">
+          <span class="text-sm text-gray-500">Pré-visualização</span>
+        </div>
+      </div>
+
+      <!-- Welcome -->
+      <div id="welcome-screen" class="flex-1 flex items-center justify-center p-8 bg-white rounded-lg shadow-md text-center">
+        <p class="text-gray-500 text-lg">
+          Por favor, faça login para começar a gerenciar seus arquivos Markdown.
+        </p>
+      </div>
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
