@@ -1,63 +1,29 @@
-/* Estilos personalizados para a barra de rolagem /
-.scrollable-container {
-overflow-y: auto;
-scrollbar-width: thin; / Firefox /
-scrollbar-color: #3f424b #0d1117; / cor do polegar da barra de rolagem e cor da faixa 
-}
-*/
-.scrollable-container::-webkit-scrollbar {
-width: 8px;
-}
-.scrollable-container::-webkit-scrollbar-track {
-background: #0d1117;
-}
-.scrollable-container::-webkit-scrollbar-thumb {
-background-color: #3f424b;
-border-radius: 4px;
-border: 2px solid #0d1117;
+body {
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  overflow: hidden;
 }
 
-/* Estilo para a pré-visualização do Markdown usando Tailwind Prose */
-#preview-container .prose {
-color: #c9d1d9;
+.scrollable-container {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #f3f4f6;
 }
-#preview-container .prose h1,
-#preview-container .prose h2,
-#preview-container .prose h3,
-#preview-container .prose h4,
-#preview-container .prose h5,
-#preview-container .prose h6 {
-color: #c9d1d9;
-font-weight: bold;
-border-bottom: 1px solid #30363d;
-padding-bottom: 0.3em;
+
+.scrollable-container::-webkit-scrollbar {
+  width: 8px;
 }
-#preview-container .prose p,
-#preview-container .prose ul,
-#preview-container .prose ol {
-color: #c9d1d9;
+
+.scrollable-container::-webkit-scrollbar-track {
+  background: #f3f4f6;
 }
-#preview-container .prose pre {
-background-color: #161b22;
-color: #c9d1d9;
-padding: 1rem;
-border-radius: 0.5rem;
+
+.scrollable-container::-webkit-scrollbar-thumb {
+  background-color: #d1d5db;
+  border-radius: 4px;
+  border: 2px solid #f3f4f6;
 }
-#preview-container .prose code {
-background-color: #161b22;
-color: #32de84;
-padding: 0.2rem 0.4rem;
-border-radius: 0.3rem;
-}
-#preview-container .prose blockquote {
-color: #8b949e;
-border-left: 0.25rem solid #30363d;
-padding-left: 1rem;
-margin-left: 0;
-}
-#preview-container .prose hr {
-border-color: #30363d;
-}
-#preview-container .prose a {
-color: #22a0eb;
+
+#editor {
+  font-family: monospace;
 }
