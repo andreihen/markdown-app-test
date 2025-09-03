@@ -1,107 +1,85 @@
 <!DOCTYPE html>
-
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Editor de Markdown</title>
-<!-- Tailwind CSS -->
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-tailwind.config = {
-theme: {
-extend: {
-colors: {
-'primary-dark': '#0d1117',
-'secondary-dark': '#161b22',
-'accent-blue': '#22a0eb',
-'accent-green': '#32de84',
-}
-}
-}
-}
-</script>
-<!-- Marked.js para renderizar Markdown -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
-<!-- Google APIs -->
-<script src="https://apis.google.com/js/api.js"></script>
-<script src="https://accounts.google.com/gsi/client"></script>
-<!-- CSS personalizado -->
-<link rel="stylesheet" href="assets/css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor de Markdown</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Marcador de Markdown -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+  <!-- Google API Client Library -->
+  <script src="https://apis.google.com/js/api.js"></script>
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client"></script>
+  <!-- Estilos -->
+  <link rel="stylesheet" href="assets/css/style.css">
 </head>
-<body class="bg-primary-dark text-gray-200">
+<body class="bg-gray-100 min-h-screen flex flex-col">
 
-<!-- Navbar -->
-<header class="bg-secondary-dark p-4 flex justify-between items-center z-10 shadow-lg border-b border-gray-700">
-    <h1 class="text-2xl font-bold text-accent-blue">Markdown Editor</h1>
+  <!-- Navbar -->
+  <header class="bg-white shadow-md p-4 flex justify-between items-center z-10">
+    <h1 class="text-2xl font-bold text-gray-800">Markdown Editor</h1>
     <div id="auth-buttons" class="flex items-center space-x-2">
-        <span id="user-info" class="text-gray-400 font-semibold hidden"></span>
-        <button id="authorize_button" class="bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold shadow-md transition-all duration-200 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent-blue focus:ring-offset-2 focus:ring-offset-secondary-dark">
-            Entrar com Google
-        </button>
-        <button id="signout_button" class="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold shadow-md transition-all duration-200 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-secondary-dark hidden">
-            Sair
-        </button>
+      <span id="user-info" class="text-gray-600 hidden"></span>
+      <button id="authorize_button" class="bg-indigo-500 text-white px-4 py-2 rounded-lg font-semibold shadow-md hover:bg-indigo-600">
+        Entrar com Google
+      </button>
+      <button id="signout_button" class="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold shadow-md hover:bg-red-600 hidden">
+        Sair
+      </button>
     </div>
-</header>
+  </header>
 
-<!-- Main App Container -->
-<div class="flex-1 flex overflow-hidden">
-    <!-- Sidebar para a lista de arquivos -->
-    <aside id="sidebar" class="bg-secondary-dark w-64 p-4 flex flex-col border-r border-gray-700">
-        <div id="file-browser-header" class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-accent-green">Meus Arquivos</h2>
-            <button id="back-button" class="text-gray-400 hover:text-white transition-colors duration-200" style="display: none;">
-                Voltar
-            </button>
+  <!-- Main App Container -->
+  <div class="flex-1 flex overflow-hidden">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="bg-gray-50 w-64 p-4 flex flex-col border-r border-gray-200 scrollable-container">
+      <h2 class="text-xl font-semibold mb-4 text-gray-700">Meus Arquivos</h2>
+      <div id="file-list" class="flex-1 space-y-2">
+        <div id="loading" class="text-gray-500 text-sm italic">
+          Carregando arquivos...
         </div>
-        <div id="file-list" class="flex-1 space-y-2 scrollable-container">
-            <div id="loading" class="text-gray-400 text-sm italic text-center">
-                Carregando...
-            </div>
-            <!-- Arquivos e pastas serão injetados aqui -->
-        </div>
-        <div class="mt-4 flex flex-col space-y-2">
-            <button id="new-file-button" class="bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold shadow-md transition-all duration-200 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent-blue focus:ring-offset-2 focus:ring-offset-secondary-dark">
-                Novo Arquivo
-            </button>
-            <button id="save-file-button" class="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold shadow-md transition-all duration-200 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2 focus:ring-offset-secondary-dark hidden">
-                Salvar
-            </button>
-        </div>
+      </div>
+      <div class="mt-4 flex space-x-2">
+        <button id="new-file-button" class="bg-green-500 text-white px-4 py-2 rounded-lg font-semibold shadow-md w-1/2">
+          Novo Arquivo
+        </button>
+        <button id="save-file-button" class="bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold shadow-md w-1/2 hidden">
+          Salvar
+        </button>
+      </div>
     </aside>
 
-    <!-- Painel principal com editor e pré-visualização -->
-    <main id="main-content" class="flex-1 p-4 flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4 hidden">
-        <!-- Editor de texto -->
-        <div id="editor-container" class="bg-secondary-dark rounded-lg shadow-md flex-1 overflow-hidden flex flex-col">
-            <div class="bg-secondary-dark p-2 border-b border-gray-700 flex items-center justify-between">
-                <span class="text-sm text-gray-500">Editor</span>
-            </div>
-            <textarea id="editor" class="flex-1 w-full p-4 text-sm resize-none focus:outline-none bg-primary-dark scrollable-container" placeholder="Comece a escrever em Markdown aqui..."></textarea>
+    <!-- Main Panel -->
+    <main class="flex-1 p-4 flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4">
+      <!-- Editor -->
+      <div id="editor-container" class="bg-white rounded-lg shadow-md flex-1 overflow-hidden flex flex-col hidden">
+        <textarea id="editor" class="flex-1 w-full p-4 text-sm resize-none focus:outline-none scrollable-container border-b border-gray-200" placeholder="Comece a escrever em Markdown aqui..."></textarea>
+        <div class="bg-white p-2 border-t border-gray-200 flex items-center justify-between">
+          <span class="text-sm text-gray-500">Editor</span>
         </div>
-        
-        <!-- Pré-visualização do Markdown -->
-        <div id="preview-container" class="bg-secondary-dark rounded-lg shadow-md flex-1 overflow-hidden flex flex-col">
-            <div class="bg-secondary-dark p-2 border-b border-gray-700 flex items-center justify-between">
-                <span class="text-sm text-gray-500">Pré-visualização</span>
-            </div>
-            <div id="preview" class="p-4 flex-1 scrollable-container prose prose-sm max-w-none text-gray-200 bg-primary-dark">
-                <!-- A pré-visualização será renderizada aqui -->
-            </div>
+      </div>
+      
+      <!-- Preview -->
+      <div id="preview-container" class="bg-white rounded-lg shadow-md flex-1 overflow-hidden flex flex-col hidden">
+        <div id="preview" class="p-4 flex-1 scrollable-container prose prose-sm max-w-none">
         </div>
-    </main>
-    
-    <!-- Tela de boas-vindas -->
-    <div id="welcome-screen" class="flex-1 flex items-center justify-center p-8 text-center">
-        <p class="text-gray-400 text-lg">
-            Por favor, faça login para começar a gerenciar seus arquivos Markdown.
+        <div class="bg-white p-2 border-t border-gray-200 flex items-center justify-between">
+          <span class="text-sm text-gray-500">Pré-visualização</span>
+        </div>
+      </div>
+
+      <!-- Welcome -->
+      <div id="welcome-screen" class="flex-1 flex items-center justify-center p-8 bg-white rounded-lg shadow-md text-center">
+        <p class="text-gray-500 text-lg">
+          Por favor, faça login para começar a gerenciar seus arquivos Markdown.
         </p>
-    </div>
-</div>
+      </div>
+    </main>
+  </div>
 
-<!-- Scripts -->
-<script src="assets/js/app.js"></script>
-
+  <!-- Scripts -->
+  <script src="assets/js/app.js"></script>
 </body>
 </html>
