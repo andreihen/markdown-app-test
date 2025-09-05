@@ -28,7 +28,12 @@ body {
   font-family: monospace;
 }
 
-/* Tree styles */
+/* Sidebar estilo Obsidian */
+#sidebar {
+  background: #f8fafc;
+  border-right: 1px solid #e2e8f0;
+}
+
 .tree {
   font-size: 14px;
 }
@@ -37,13 +42,14 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 6px;
-  border-radius: 8px;
-  cursor: default;
+  padding: 3px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
 }
 
 .tree-node:hover {
-  background: #f3f4f6;
+  background: #e2e8f0;
 }
 
 .tree-node .toggle {
@@ -52,6 +58,8 @@ body {
   width: 16px;
   display: inline-flex;
   justify-content: center;
+  font-size: 11px;
+  color: #64748b;
 }
 
 .tree-node .name {
@@ -61,24 +69,78 @@ body {
   text-overflow: ellipsis;
 }
 
+.tree-node .file {
+  color: #1e293b;
+}
+
+.tree-node .file:hover {
+  text-decoration: underline;
+}
+
 .children {
   margin-left: 18px;
   padding-left: 6px;
   border-left: 1px dashed #e5e7eb;
 }
 
-.badge {
-  font-size: 10px;
-  padding: 2px 6px;
-  background: #eef2ff;
-  color: #3730a3;
-  border-radius: 999px;
+/* Markdown Preview estilo Obsidian */
+#preview {
+  font-size: 14px;
+  line-height: 1.6;
 }
 
-.file {
-  cursor: pointer;
+#preview h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.3rem;
 }
 
-.file:hover {
-  text-decoration: underline;
+#preview h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-top: 1.2rem;
+  margin-bottom: 0.4rem;
+}
+
+#preview h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.3rem;
+}
+
+#preview strong {
+  font-weight: 700;
+}
+
+#preview em {
+  font-style: italic;
+}
+
+#preview strong em,
+#preview em strong {
+  font-style: italic;
+  font-weight: bold;
+}
+
+#preview code {
+  background: #f3f4f6;
+  color: #374151;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-family: "Fira Code", monospace;
+  font-size: 0.9em;
+}
+
+#preview pre {
+  background: #1e293b;
+  color: #f1f5f9;
+  padding: 12px;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-family: "Fira Code", monospace;
+  font-size: 0.9em;
+  margin: 1rem 0;
 }
