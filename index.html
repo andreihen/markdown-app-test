@@ -8,6 +8,9 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Marked (Markdown parser) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+  <!-- highlight.js (syntax highlight) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <!-- Google API Client Library -->
   <script src="https://apis.google.com/js/api.js"></script>
   <!-- Google Identity Services -->
@@ -16,75 +19,88 @@
   <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col">
-    <!-- Navbar -->
-    <header class="bg-secondary-dark p-4 flex justify-between items-center z-10 shadow-lg border-b border-gray-700">
-        <h1 class="text-2xl font-bold text-accent-blue">Markdown Editor</h1>
-        <div id="auth-buttons" class="flex items-center space-x-2">
-            <span id="user-info" class="text-gray-400 font-semibold hidden"></span>
-            <button id="authorize_button" class="bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold shadow-md transition-all duration-200 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent-blue focus:ring-offset-2 focus:ring-offset-secondary-dark">
-                Entrar com Google
-            </button>
-            <button id="signout_button" class="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold shadow-md transition-all duration-200 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-secondary-dark hidden">
-                Sair
-            </button>
-        </div>
-    </header>
 
-    <!-- Main App Container -->
-    <div class="flex-1 flex overflow-hidden">
-        <!-- Sidebar para a lista de arquivos -->
-        <aside id="sidebar" class="bg-secondary-dark w-64 p-4 flex flex-col border-r border-gray-700">
-            <div id="file-browser-header" class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-semibold text-accent-green">Meus Arquivos</h2>
-                <button id="back-button" class="text-gray-400 hover:text-white transition-colors duration-200" style="display: none;">
-                    Voltar
-                </button>
-            </div>
-            <div id="file-list" class="flex-1 space-y-2 scrollable-container">
-                <div id="loading" class="text-gray-400 text-sm italic text-center">
-                    Carregando...
-                </div>
-                <!-- Arquivos e pastas serão injetados aqui -->
-            </div>
-            <div class="mt-4 flex flex-col space-y-2">
-                <button id="new-file-button" class="bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold shadow-md transition-all duration-200 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent-blue focus:ring-offset-2 focus:ring-offset-secondary-dark">
-                    Novo Arquivo
-                </button>
-                <button id="save-file-button" class="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold shadow-md transition-all duration-200 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2 focus:ring-offset-secondary-dark hidden">
-                    Salvar
-                </button>
-            </div>
-        </aside>
-
-        <!-- Painel principal com editor e pré-visualização -->
-        <main id="main-content" class="flex-1 p-4 flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4 hidden">
-            <!-- Editor de texto -->
-            <div id="editor-container" class="bg-secondary-dark rounded-lg shadow-md flex-1 overflow-hidden flex flex-col">
-                <div class="bg-secondary-dark p-2 border-b border-gray-700 flex items-center justify-between">
-                    <span class="text-sm text-gray-500">Editor</span>
-                </div>
-                <textarea id="editor" class="flex-1 w-full p-4 text-sm resize-none focus:outline-none bg-primary-dark scrollable-container" placeholder="Comece a escrever em Markdown aqui..."></textarea>
-            </div>
-            
-            <!-- Pré-visualização do Markdown -->
-            <div id="preview-container" class="bg-secondary-dark rounded-lg shadow-md flex-1 overflow-hidden flex flex-col">
-                <div class="bg-secondary-dark p-2 border-b border-gray-700 flex items-center justify-between">
-                    <span class="text-sm text-gray-500">Pré-visualização</span>
-                </div>
-                <div id="preview" class="p-4 flex-1 scrollable-container prose prose-sm max-w-none text-gray-200 bg-primary-dark">
-                    <!-- A pré-visualização será renderizada aqui -->
-                </div>
-            </div>
-        </main>
-        
-        <!-- Tela de boas-vindas -->
-        <div id="welcome-screen" class="flex-1 flex items-center justify-center p-8 text-center">
-            <p class="text-gray-400 text-lg">
-                Por favor, faça login para começar a gerenciar seus arquivos Markdown.
-            </p>
-        </div>
+  <!-- Navbar -->
+  <header class="bg-white shadow-md p-4 flex justify-between items-center z-10">
+    <div class="flex items-center gap-3">
+      <h1 class="text-2xl font-bold text-gray-800">Markdown Editor</h1>
+      <span id="current-root" class="text-xs text-gray-500 hidden"></span>
     </div>
+    <div id="auth-buttons" class="flex items-center space-x-2">
+      <span id="user-info" class="text-gray-600 hidden"></span>
+      <button id="authorize_button" class="bg-indigo-500 text-white px-4 py-2 rounded-lg font-semibold shadow-md hover:bg-indigo-600">
+        Entrar com Google
+      </button>
+      <button id="signout_button" class="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold shadow-md hover:bg-red-600 hidden">
+        Sair
+      </button>
+    </div>
+  </header>
 
-    <script src="assets/js/app.js"></script>
+  <!-- Main App Container -->
+  <div class="flex-1 flex overflow-hidden">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="bg-gray-50 w-80 p-4 flex flex-col border-r border-gray-200 scrollable-container">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-xl font-semibold text-gray-700">Arquivos</h2>
+        <button id="select-root-button" class="bg-indigo-600 text-white px-3 py-2 rounded-md text-sm font-medium shadow hover:bg-indigo-700">
+          📂 Selecionar pasta
+        </button>
+      </div>
+
+      <!-- Collapsible tree -->
+      <div id="folder-tree" class="tree flex-1"></div>
+
+      <div class="mt-4 grid grid-cols-2 gap-2">
+        <button id="new-file-button" class="bg-green-500 text-white px-4 py-2 rounded-lg font-semibold shadow-md">
+          Novo Arquivo
+        </button>
+        <button id="save-file-button" class="bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold shadow-md hidden">
+          Salvar
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Panel -->
+    <main class="flex-1 p-4 flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4">
+      <!-- Editor -->
+      <div id="editor-container" class="bg-white rounded-lg shadow-md flex-1 overflow-hidden flex flex-col hidden">
+        <textarea id="editor" class="flex-1 w-full p-4 text-sm resize-none focus:outline-none scrollable-container border-b border-gray-200" placeholder="Comece a escrever em Markdown aqui..."></textarea>
+        <div class="bg-white p-2 border-t border-gray-200 flex items-center justify-between">
+          <span class="text-sm text-gray-500">Editor</span>
+        </div>
+      </div>
+      
+      <!-- Preview -->
+      <div id="preview-container" class="bg-white rounded-lg shadow-md flex-1 overflow-hidden flex flex-col hidden">
+        <div id="preview" class="p-4 flex-1 scrollable-container prose prose-sm max-w-none"></div>
+        <div class="bg-white p-2 border-t border-gray-200 flex items-center justify-between">
+          <span class="text-sm text-gray-500">Pré-visualização</span>
+        </div>
+      </div>
+
+      <!-- Welcome -->
+      <div id="welcome-screen" class="flex-1 flex items-center justify-center p-8 bg-white rounded-lg shadow-md text-center">
+        <p class="text-gray-500 text-lg">
+          Faça login e selecione a pasta do seu Obsidian para navegar e editar arquivos .md.
+        </p>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal para selecionar pasta -->
+  <div id="folder-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center">
+    <div class="bg-white w-[90vw] max-w-3xl max-h-[80vh] rounded-xl shadow-xl p-4 flex flex-col">
+      <div class="flex justify-between items-center mb-2">
+        <h3 class="text-lg font-semibold">Selecione a pasta raiz</h3>
+        <button id="close-folder-modal" class="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300 text-sm">Fechar</button>
+      </div>
+      <div id="modal-tree" class="tree scrollable-container border rounded p-3"></div>
+      <div class="mt-3 text-xs text-gray-500">Dica: expanda até encontrar sua pasta do Obsidian (sincronizada no Drive) e clique em “Usar esta pasta”.</div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="assets/js/app.js"></script>
 </body>
 </html>
