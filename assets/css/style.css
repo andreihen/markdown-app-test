@@ -27,3 +27,58 @@ body {
 #editor {
   font-family: monospace;
 }
+
+/* Tree styles */
+.tree {
+  font-size: 14px;
+}
+
+.tree-node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  cursor: default;
+}
+
+.tree-node:hover {
+  background: #f3f4f6;
+}
+
+.tree-node .toggle {
+  cursor: pointer;
+  user-select: none;
+  width: 16px;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.tree-node .name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.children {
+  margin-left: 18px;
+  padding-left: 6px;
+  border-left: 1px dashed #e5e7eb;
+}
+
+.badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  background: #eef2ff;
+  color: #3730a3;
+  border-radius: 999px;
+}
+
+.file {
+  cursor: pointer;
+}
+
+.file:hover {
+  text-decoration: underline;
+}
