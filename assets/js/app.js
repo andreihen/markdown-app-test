@@ -1,4 +1,5 @@
-// Please replace with your own CLIENT_ID and API_KEY from Google Cloud Console
+// ===== CONFIG =====
+// (Mantenha suas próprias credenciais)
 const CLIENT_ID = '716832953958-rj4vgkdk7ftn03lbrs4h2or9v2di16e6.apps.googleusercontent.com';
 const API_KEY = 'AIzaSyDc7g27_P5QnUwBdsnsMTlmXG2Yr3IGfAM';
 const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
@@ -9,9 +10,10 @@ let gisInited = false;
 let tokenClient;
 let currentFile = null;
 let currentFolderId = null; // pasta atual
-let rootFolderId = null; // raiz da aplicação
+let rootFolderId = null; // raiz selecionada (Ex.: pasta do Obsidian)
+let loadedChildren = new Set(); // pastas já carregadas no tree
 
-// ELEMENTOS
+// ===== ELEMENTOS =====
 const authButton = document.getElementById('authorize_button');
 const signoutButton = document.getElementById('signout_button');
 const fileListContainer = document.getElementById('file-list');
@@ -24,8 +26,16 @@ const saveButton = document.getElementById('save-file-button');
 const newFileButton = document.getElementById('new-file-button');
 const userInfo = document.getElementById('user-info');
 const loadingSpinner = document.getElementById('loading');
+const folderTree = document.getElementById('folder-tree');
+const currentRoot = document.getElementById('current-root');
+const selectRootBtn = document.getElementById('select-root-button');
 
-// ---------- AUTENTICAÇÃO ----------
+// Modal
+const folderModal = document.getElementById('folder-modal');
+const modalTree = document.getElementById('modal-tree');
+const closeFolderModalBtn = document.getElementById('close-folder-modal');
+
+// ===== AUTENTICAÇÃO =====
 function gapiLoad() {
   gapi.load('client', intializeGapiClient);
 }
@@ -59,9 +69,18 @@ function handleAuthClick() {
   tokenClient.callback = async (resp) => {
     if (resp.error !== undefined) throw (resp);
     showAuthenticatedUI();
-    rootFolderId = await getAppFolderId();
-    currentFolderId = rootFolderId;
-    await listDriveItems(rootFolderId);
+
+    // Se já existe uma raiz salva, usa ela; senão, pede para selecionar
+    const savedRoot = localStorage.getItem('mdRootFolderId');
+    if (savedRoot) {
+      rootFolderId = savedRoot;
+      currentFolderId = savedRoot;
+      await renderRootLabel(savedRoot);
+      await renderTree(rootFolderId, folderTree, true);
+    } else {
+      // Exibe o modal para escolha da pasta
+      openFolderModal();
+    }
   };
 
   if (gapi.client.getToken() === null) {
@@ -80,13 +99,14 @@ function handleSignoutClick() {
   }
 }
 
-// ---------- UI ----------
+// ===== UI =====
 function showAuthenticatedUI() {
   authButton.style.display = 'none';
   signoutButton.style.display = 'block';
   welcomeScreen.style.display = 'none';
   editorContainer.style.display = 'flex';
   previewContainer.style.display = 'flex';
+  currentRoot.classList.remove('hidden');
 }
 
 function showSignedOutUI() {
@@ -98,97 +118,127 @@ function showSignedOutUI() {
   userInfo.style.display = 'none';
   saveButton.style.display = 'none';
   currentFile = null;
+  currentRoot.classList.add('hidden');
+  folderTree.innerHTML = '';
 }
 
-// ---------- DRIVE ----------
-async function getAppFolderId() {
-  const APP_FOLDER_NAME = 'Markdown Editor App';
-  try {
-    const response = await gapi.client.drive.files.list({
-      q: `mimeType='application/vnd.google-apps.folder' and name='${APP_FOLDER_NAME}' and trashed=false`,
-      spaces: 'drive',
-      fields: 'files(id, name)',
-    });
-    const folder = response.result.files[0];
-    if (folder) return folder.id;
+// ===== DRIVE HELPERS =====
+async function getFileMetadata(id) {
+  const res = await gapi.client.drive.files.get({ fileId: id, fields: 'id, name, mimeType, parents' });
+  return res.result;
+}
 
-    const newFolder = await gapi.client.drive.files.create({
-      resource: {
-        name: APP_FOLDER_NAME,
-        mimeType: 'application/vnd.google-apps.folder',
-      },
-      fields: 'id',
-    });
-    return newFolder.result.id;
-  } catch (error) {
-    console.error('Erro ao criar pasta app:', error);
-    return null;
+async function listChildren(folderId, includeFiles = true) {
+  const qParts = [`'${folderId}' in parents`, `trashed=false`];
+  const q = qParts.join(' and ');
+  const res = await gapi.client.drive.files.list({
+    q,
+    spaces: 'drive',
+    fields: 'files(id, name, mimeType)',
+    pageSize: 1000,
+  });
+  // Filtra: pastas sempre, arquivos apenas .md
+  const folders = res.result.files.filter(f => f.mimeType === 'application/vnd.google-apps.folder');
+  let files = [];
+  if (includeFiles) {
+    files = res.result.files.filter(f => f.mimeType === 'text/markdown' || f.name?.toLowerCase().endsWith('.md'));
   }
+  // Ordena por nome
+  folders.sort((a,b)=>a.name.localeCompare(b.name, 'pt-BR'));
+  files.sort((a,b)=>a.name.localeCompare(b.name, 'pt-BR'));
+  return { folders, files };
 }
 
-// Lista arquivos e pastas
-async function listDriveItems(folderId) {
-  fileListContainer.innerHTML = '';
-  loadingSpinner.style.display = 'block';
-  try {
-    const response = await gapi.client.drive.files.list({
-      q: `'${folderId}' in parents and trashed=false`,
-      spaces: 'drive',
-      fields: 'files(id, name, mimeType)',
+// ===== TREE RENDER =====
+function makeNode({ id, name, type }) {
+  const node = document.createElement('div');
+  node.className = 'tree-node';
+  node.dataset.id = id;
+  node.dataset.type = type;
+
+  const toggle = document.createElement('span');
+  toggle.className = 'toggle select-none';
+  toggle.textContent = type === 'folder' ? '▶' : '';
+  node.appendChild(toggle);
+
+  const nameSpan = document.createElement('span');
+  nameSpan.className = 'name ' + (type === 'file' ? 'file' : '');
+  nameSpan.textContent = name;
+  node.appendChild(nameSpan);
+
+  if (type === 'folder') {
+    const useBtn = document.createElement('button');
+    useBtn.className = 'text-[10px] px-2 py-1 rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100';
+    useBtn.textContent = 'Usar esta pasta';
+    useBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await setAsRoot(id, name);
     });
+    node.appendChild(useBtn);
+  } else {
+    // file
+    nameSpan.addEventListener('click', () => loadFile(id));
+  }
 
-    if (folderId !== rootFolderId) {
-      const backBtn = document.createElement('div');
-      backBtn.textContent = '⬅ Voltar';
-      backBtn.classList.add('p-2', 'bg-gray-200', 'rounded-lg', 'cursor-pointer', 'hover:bg-gray-300');
-      backBtn.addEventListener('click', () => navigateUp(folderId));
-      fileListContainer.appendChild(backBtn);
-    }
+  const childrenWrap = document.createElement('div');
+  childrenWrap.className = 'children hidden';
+  node.appendChild(childrenWrap);
 
-    if (response.result.files.length === 0) {
-      fileListContainer.innerHTML += '<p class="text-gray-500 text-sm">Nenhum item encontrado.</p>';
-    } else {
-      response.result.files.forEach(file => {
-        const el = document.createElement('div');
-        el.classList.add('p-2', 'bg-white', 'rounded-lg', 'shadow-sm', 'cursor-pointer', 'hover:bg-gray-100');
-
-        el.textContent = file.name;
-        el.dataset.fileId = file.id;
-
-        if (file.mimeType === 'application/vnd.google-apps.folder') {
-          el.addEventListener('click', () => {
-            currentFolderId = file.id;
-            listDriveItems(file.id);
-          });
-        } else if (file.mimeType === 'text/markdown') {
-          el.addEventListener('click', () => loadFile(file.id));
+  if (type === 'folder') {
+    toggle.addEventListener('click', async () => {
+      const opened = !childrenWrap.classList.contains('hidden');
+      if (opened) {
+        childrenWrap.classList.add('hidden');
+        toggle.textContent = '▶';
+      } else {
+        toggle.textContent = '▼';
+        childrenWrap.classList.remove('hidden');
+        // Lazy load
+        const key = `loaded:${id}`;
+        if (!loadedChildren.has(key)) {
+          const { folders, files } = await listChildren(id, true);
+          folders.forEach(f => childrenWrap.appendChild(makeNode({ id: f.id, name: f.name, type: 'folder' })));
+          files.forEach(f => childrenWrap.appendChild(makeNode({ id: f.id, name: f.name, type: 'file' })));
+          loadedChildren.add(key);
         }
-        fileListContainer.appendChild(el);
-      });
-    }
-  } catch (error) {
-    console.error('Erro ao listar arquivos:', error);
-  } finally {
-    loadingSpinner.style.display = 'none';
-  }
-}
-
-async function navigateUp(folderId) {
-  try {
-    const response = await gapi.client.drive.files.get({
-      fileId: folderId,
-      fields: 'parents',
+      }
     });
-    if (response.result.parents) {
-      currentFolderId = response.result.parents[0];
-      await listDriveItems(currentFolderId);
-    }
-  } catch (error) {
-    console.error('Erro ao voltar:', error);
   }
+
+  return node;
 }
 
-// Carregar arquivo
+async function renderTree(rootId, container, clear = false) {
+  if (clear) container.innerHTML = '';
+  const meta = await getFileMetadata(rootId);
+  const rootNode = makeNode({ id: meta.id, name: meta.name || 'Pasta', type: 'folder' });
+  container.appendChild(rootNode);
+}
+
+async function setAsRoot(folderId, name) {
+  rootFolderId = folderId;
+  currentFolderId = folderId;
+  localStorage.setItem('mdRootFolderId', folderId);
+  await renderRootLabel(folderId, name);
+  // Re-render tree a partir da nova raiz
+  loadedChildren.clear();
+  folderTree.innerHTML = '';
+  await renderTree(rootFolderId, folderTree, true);
+}
+
+// Mostra a label com o caminho/raiz atual
+async function renderRootLabel(folderId, knownName) {
+  let name = knownName;
+  if (!name) {
+    try {
+      const meta = await getFileMetadata(folderId);
+      name = meta.name;
+    } catch {}
+  }
+  currentRoot.textContent = name ? `Raiz: ${name}` : `Raiz definida`;
+}
+
+// ===== ARQUIVOS =====
 async function loadFile(fileId) {
   try {
     const response = await gapi.client.drive.files.get({
@@ -205,20 +255,16 @@ async function loadFile(fileId) {
   }
 }
 
-// Salvar arquivo
 async function saveFile() {
   if (!currentFile) return alert('Nenhum arquivo aberto.');
   const content = editor.value;
   const file = new Blob([content], { type: 'text/markdown' });
-  const form = new FormData();
-  form.append('metadata', new Blob([JSON.stringify({ name: `documento-${Date.now()}.md` })], { type: 'application/json' }));
-  form.append('file', file);
 
   try {
-    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${currentFile}?uploadType=multipart&alt=json`, {
+    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${currentFile}?uploadType=media`, {
       method: 'PATCH',
       headers: { 'Authorization': `Bearer ${gapi.client.getToken().access_token}` },
-      body: form,
+      body: file,
     });
     alert('Arquivo salvo!');
   } catch (error) {
@@ -226,18 +272,17 @@ async function saveFile() {
   }
 }
 
-// Criar novo arquivo
 async function createNewFile() {
   const name = prompt("Nome do arquivo (ex: notas.md):");
-  if (!name || !name.endsWith('.md')) return alert('Nome inválido.');
+  if (!name || !name.toLowerCase().endsWith('.md')) return alert('Nome inválido.');
 
-  const content = `# ${name.replace('.md', '')}\n\nComece a escrever aqui...`;
+  const content = `# ${name.replace(/\.md$/i, '')}\n\nComece a escrever aqui...`;
   const file = new Blob([content], { type: 'text/markdown' });
   const form = new FormData();
   form.append('metadata', new Blob([JSON.stringify({
     name: name,
     mimeType: 'text/markdown',
-    parents: [currentFolderId]
+    parents: [currentFolderId || rootFolderId]
   })], { type: 'application/json' }));
   form.append('file', file);
 
@@ -248,19 +293,39 @@ async function createNewFile() {
       body: form,
     });
     const result = await response.json();
-    await listDriveItems(currentFolderId);
+    // Atualiza a árvore
+    loadedChildren.delete(`loaded:${currentFolderId || rootFolderId}`);
+    if (folderTree.firstChild) {
+      const toggle = folderTree.querySelector(`.tree-node[data-id="${currentFolderId || rootFolderId}"] .toggle`);
+      if (toggle && toggle.textContent === '▼') {
+        toggle.click(); // fecha
+        toggle.click(); // reabre
+      }
+    }
     loadFile(result.id);
   } catch (error) {
     console.error('Erro ao criar arquivo:', error);
   }
 }
 
-// ---------- PREVIEW ----------
+// ===== PREVIEW =====
 function updatePreview() {
-  preview.innerHTML = marked.parse(editor.value);
+  marked.use({ breaks: true });
+  preview.innerHTML = marked.parse(editor.value || '');
 }
 
-// ---------- EVENTOS ----------
+// ===== MODAL DE SELEÇÃO DE PASTA =====
+function openFolderModal() {
+  folderModal.classList.remove('hidden');
+  modalTree.innerHTML = '';
+  renderTree('root', modalTree, true);
+}
+
+function closeFolderModal() {
+  folderModal.classList.add('hidden');
+}
+
+// ===== EVENTOS =====
 window.onload = function () {
   gapiLoad();
   gisLoad();
@@ -269,4 +334,6 @@ window.onload = function () {
   editor.addEventListener('input', updatePreview);
   saveButton.addEventListener('click', saveFile);
   newFileButton.addEventListener('click', createNewFile);
+  selectRootBtn.addEventListener('click', openFolderModal);
+  closeFolderModalBtn.addEventListener('click', closeFolderModal);
 };
